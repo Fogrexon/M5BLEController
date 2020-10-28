@@ -1,6 +1,7 @@
 #include <stdio.h>
 #define M5STACK_MPU6886 
 #include <M5Stack.h>
+#include <utility/MahonyAHRS.h>
 #include <BLEDevice.h>
 #include <BLEUtils.h>
 #include <BLEServer.h>
@@ -13,9 +14,23 @@ BLEServer* pServer = NULL;
 BLECharacteristic* pCharacteristic = NULL;
 bool deviceConnected = false;
 
+float accX = 0.0F;
+float accY = 0.0F;
+float accZ = 0.0F;
+
+float gyroX = 0.0F;
+float gyroY = 0.0F;
+float gyroZ = 0.0F;
+
 float pitch = 0.0F;
-float roll = 0.0F;
-float yaw = 0.0F;
+float roll  = 0.0F;
+float yaw   = 0.0F;
+
+//[追加]GyroZのデータを蓄積するための変数
+float stockedGyroZs[10];
+int stockCnt=0;
+float adjustGyroZ=0;
+int stockedGyroZLength=0;
 
 class MyServerCallbacks: public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) {
@@ -41,6 +56,30 @@ class MyCallbacks: public BLECharacteristicCallbacks {
     M5.Lcd.println(value.c_str());
   }
 };
+
+void getAhrs() {
+   // put your main code here, to run repeatedly:
+  M5.IMU.getGyroData(&gyroX,&gyroY,&gyroZ);
+  M5.IMU.getAccelData(&accX,&accY,&accZ);
+  //[変更]これは使わない
+  // M5.IMU.getAhrsData(&pitch,&roll,&yaw); 
+
+  //[追加]起動時にstockedGyroZLengthの数だけデータを貯める
+  if(stockCnt<stockedGyroZLength){
+    stockedGyroZs[stockCnt]=gyroZ;
+    stockCnt++;
+  }else{
+    if(adjustGyroZ==0){
+      for(int i=0;i<stockedGyroZLength;i++){
+        adjustGyroZ+=stockedGyroZs[i]/stockedGyroZLength;
+      }
+    }
+    //貯めたデータの平均値を使ってgyroZを補正する
+    gyroZ-=adjustGyroZ; 
+    //ここでaccelデータと補正したgyroデータを使ってpitch・roll・yawを計算する
+    MahonyAHRSupdateIMU(gyroX * DEG_TO_RAD, gyroY * DEG_TO_RAD, gyroZ * DEG_TO_RAD, accX, accY, accZ, &pitch, &roll, &yaw);
+  }
+}
 
 void setup() {
   Serial.begin(115200);
@@ -74,9 +113,10 @@ void loop() {
     M5.powerOFF();
   }
   if (deviceConnected) {
-    M5.IMU.getAhrsData(&pitch,&roll,&yaw);
+//    M5.IMU.getAhrsData(&pitch,&roll,&yaw);
+    getAhrs();
     char buf[128];
-    sprintf(buf, "{'pitch': %f, 'roll': %f, 'yaw: %f}", pitch, roll, yaw);
+    sprintf(buf, "{\"x\": %f, \"y\": %f, \"z\": %f}", accX, accY, accZ);
     pCharacteristic->setValue(buf);
     pCharacteristic->notify();
   }
