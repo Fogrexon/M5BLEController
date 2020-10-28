@@ -30,7 +30,7 @@ const onButtonDown = async () => {
     await myCharacteristic.startNotifications();
     myCharacteristic.addEventListener('characteristicvaluechanged', (e) => {
       const { value } = e.target;
-      document.getElementById('log').textContent += `${decoder.decode(value)}\n`;
+      document.getElementById('log').textContent = `${decoder.decode(value)}\n`;
     });
   } catch (error) {
     console.error(error);
@@ -39,7 +39,7 @@ const onButtonDown = async () => {
   setTimeout(() => {
     if (device.gatt.connected) {
       device.gatt.disconnect();
-      document.getElementById('log').textContent += 'disconnected';
+      document.getElementById('log').textContent = 'disconnected';
     }
   }, 60 * 1000);
 };

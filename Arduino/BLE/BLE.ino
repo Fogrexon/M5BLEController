@@ -1,11 +1,10 @@
+#include <stdio.h>
+#define M5STACK_MPU6886 
 #include <M5Stack.h>
 #include <BLEDevice.h>
 #include <BLEUtils.h>
 #include <BLEServer.h>
 #include <BLE2902.h>
-
-// See the following for generating UUIDs:
-// https://www.uuidgenerator.net/
 
 #define SERVICE_UUID        "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
 #define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
@@ -13,6 +12,10 @@
 BLEServer* pServer = NULL;
 BLECharacteristic* pCharacteristic = NULL;
 bool deviceConnected = false;
+
+float pitch = 0.0F;
+float roll = 0.0F;
+float yaw = 0.0F;
 
 class MyServerCallbacks: public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) {
@@ -43,6 +46,7 @@ void setup() {
   Serial.begin(115200);
   M5.begin();
   M5.setWakeupButton(BUTTON_A_PIN);
+  M5.IMU.Init();
   M5.Lcd.println("BLE start.");
   m5.Speaker.mute();
 
@@ -70,11 +74,11 @@ void loop() {
     M5.powerOFF();
   }
   if (deviceConnected) {
-    if(M5.BtnB.wasPressed()) {
-      M5.Lcd.println("Button B pressed!");
-      pCharacteristic->setValue("Button B pressed!");
-      pCharacteristic->notify();
-    }
+    M5.IMU.getAhrsData(&pitch,&roll,&yaw);
+    char buf[128];
+    sprintf(buf, "{'pitch': %f, 'roll': %f, 'yaw: %f}", pitch, roll, yaw);
+    pCharacteristic->setValue(buf);
+    pCharacteristic->notify();
   }
   M5.update();
 }
