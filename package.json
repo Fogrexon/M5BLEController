@@ -1,0 +1,22 @@
+{
+  "name": "m5blecontroller",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Fogrexon/M5BLEController.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Fogrexon/M5BLEController/issues"
+  },
+  "homepage": "https://github.com/Fogrexon/M5BLEController#readme",
+  "devDependencies": {
+    "parcel": "^1.12.4"
+  }
+}
